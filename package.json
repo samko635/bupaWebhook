@@ -12,6 +12,7 @@
     "actions-on-google": "^2.3.0",
     "body-parser": "^1.18.3",
     "dialogflow-fulfillment": "^0.5.0",
-    "express": "^4.16.3"
+    "express": "^4.16.3",
+    "pm2": "^3.0.3"
   }
 }
