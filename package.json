@@ -1,0 +1,17 @@
+{
+  "name": "bupawebhook",
+  "version": "1.0.0",
+  "description": "Webhook for bupa chatbot agent",
+  "main": "main.js",
+  "scripts": {
+    "test": "node main.js"
+  },
+  "author": "Samko",
+  "license": "ISC",
+  "dependencies": {
+    "actions-on-google": "^2.3.0",
+    "body-parser": "^1.18.3",
+    "dialogflow-fulfillment": "^0.5.0",
+    "express": "^4.16.3"
+  }
+}
