@@ -6,7 +6,9 @@ const
     body_parser = require('body-parser'),
     app = express().use(body_parser.json()),
     {WebhookClient} = require('dialogflow-fulfillment'),
-    {Card, Suggestion, Payload, Text} = require('dialogflow-fulfillment');
+    {Card, Suggestion, Payload, Text} = require('dialogflow-fulfillment'),
+    twilio = require('twilio'),
+    config = require('./config.js');
 
 // Sets server port and logs message on success
 app.listen(process.env.PORT || 8080, () => console.log('webhook is listening'));
@@ -52,78 +54,65 @@ function guidedInquiry(agent) {
     agent.add('This is from webhook.');
 }
 
-function purchasingOS(agent){
-    agent.add('This is overseas student insurance information.')
-}
-
-function purchasingOV(agent){
-    agent.add('This is overseas visitor insurance information.')
-}
-
-function testRich(agent){
-    if(agent.requestSource == 'GOOGLE_TELEPHONY'){
-        agent.add('This is for test RICH.');
+// This is to offer different types of hospital cover based on residency
+function hospitalCover(agent){
+    let param = agent.getContext('insurance_purchasing').parameters;
+    if(param.resident && param.resident == 'true'){
+        agent.add('What hospital coverage do you want? Cover options are. \nBasic cover. \nBudget cover. \nStandard cover. \nTop cover.');
     } else {
-        /*
-        agent.add(new Card({
-           title: `Title: this is a card title(DEFAULT)`,
-           imageUrl: 'https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png',
-           text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
-           buttonText: 'This is a button',
-            buttonUrl: 'https://assistant.google.com/'
-            })
-        );
-        */
-        agent.add(new Suggestion('Quick Reply'));
-        agent.add(new Suggestion('Suggestion'));
+        agent.add('What hospital coverage do you want? Cover options are. \n Essential cover. Gold cover.');
     }
-    console.log('AGENT SOURCE:: '+agent.requestSource);
 }
-  // // Uncomment and edit to make your own intent handler
-  // // uncomment `intentMap.set('your intent name here', yourFunctionHandler);`
-  // // below to get this function to be run when a Dialogflow intent is matched
-  // function yourFunctionHandler(agent) {
-  //   agent.add(`This message is from Dialogflow's Cloud Functions for Firebase editor!`);
-  //   agent.add(new Card({
-  //       title: `Title: this is a card title`,
-  //       imageUrl: 'https://developers.google.com/actions/images/badges/XPM_BADGING_GoogleAssistant_VER.png',
-  //       text: `This is the body text of a card.  You can even use line\n  breaks and emoji! 💁`,
-  //       buttonText: 'This is a button',
-  //       buttonUrl: 'https://assistant.google.com/'
-  //     })
-  //   );
-  //   agent.add(new Suggestion(`Quick Reply`));
-  //   agent.add(new Suggestion(`Suggestion`));
-  //   agent.setContext({ name: 'weather', lifespan: 2, parameters: { city: 'Rome' }});
-  // }
 
-  // // Uncomment and edit to make your own Google Assistant intent handler
-  // // uncomment `intentMap.set('your intent name here', googleAssistantHandler);`
-  // // below to get this function to be run when a Dialogflow intent is matched
-  // function googleAssistantHandler(agent) {
-  //   let conv = agent.conv(); // Get Actions on Google library conv instance
-  //   conv.ask('Hello from the Actions on Google client library!') // Use Actions on Google library
-  //   agent.add(conv); // Add Actions on Google library responses to your agent's response
-  // }
-  // // See https://github.com/dialogflow/dialogflow-fulfillment-nodejs/tree/master/samples/actions-on-google
-  // // for a complete Dialogflow fulfillment library Actions on Google client library v2 integration sample
+function sendSMS(agent){
+    let param = agent.getContext('insurance_purchasing').parameters;
+    console.log('INFO :: '+ JSON.stringify(param));
+    // create links here!
+    let text = 'Link on ';
+    if(param.student && param.student == 'true'){
+      // student insurance
+      text += 'OSHC '+(param.extra_services)? 'with extra insurance':'insurance';
+    } else {
+      // others
+      text += param.hospital_cover_type[0]+' health insurance ';
+      if(param.extra_level || param.extra_services){
+        text+='with '+param.extra_level + ' extras';
+      }
+    }
+    twilioSMS(text, null);  // if any, extract num from user_info context
+}
 
-  // Run the proper function handler based on the matched Dialogflow intent name
   let intentMap = new Map();
   intentMap.set('Default Welcome Intent', welcome);
   intentMap.set('Default Fallback Intent', fallback);
   intentMap.set('support_inquiry_purchasing', purchasing);
   intentMap.set('support_inquiry_claim', claim);
   intentMap.set('insurance_inquiry', guidedInquiry);
-  intentMap.set('support_inquiry_purchasing - no - yes (overseas student)', purchasingOS);
-  intentMap.set('support_inquiry_purchasing - no - no (overseas visitor)', purchasingOV);
-  intentMap.set('Test Rich', testRich);
-  // intentMap.set('your intent name here', yourFunctionHandler);
-  // intentMap.set('your intent name here', googleAssistantHandler);
+  intentMap.set('hospital_with_extra', sendSMS);
+  intentMap.set('hospital_only', sendSMS);
+  intentMap.set('OSHC', sendSMS);
+  intentMap.set('OSHC Extra', sendSMS);
+  intentMap.set('OSHC - Maybe', sendSMS);
+  intentMap.set('support_inquiry_purchasing_extras_only', sendSMS);
+  intentMap.set('support_inquiry_purchasing_health_followup1', hospitalCover);
   agent.handleRequest(intentMap);
 });
 
+function twilioSMS(text, num){
+  var accountSid = config.TWILIO_SID; // Your Account SID from www.twilio.com/console
+  var authToken = config.TWILIO_AUTH_TOKEN;   // Your Auth Token from www.twilio.com/console
 
+  var twilio = require('twilio');
+  var client = new twilio(accountSid, authToken);
+  var targetNum = (num)? num:config.TARGET_NUM;
+  console.log('Sending '+text +' to '+targetNum+' from '+ config.TWILIO_NUM);
+  client.messages.create({
+      body: text,
+      to: targetNum,  // Text this number
+      from: config.TWILIO_NUM// From a valid Twilio number
+  })
+  .then((message) => console.log(message.sid));
+}
 
 /*// Local test
 app.post('/webhook/:id/:msg', (req, res) => {
