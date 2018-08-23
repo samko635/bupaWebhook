@@ -19,9 +19,9 @@ app.get('/webhook', (request, response) => {
 });
 
 app.post('/webhook', (request, response) => {
-    const agent = new WebhookClient({ request, response });
-    console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  const agent = new WebhookClient({ request, response });
+  //console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
+  //console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
  
   function welcome(agent) {
     agent.add(`Welcome to my agent!`);
@@ -71,7 +71,8 @@ function sendSMS(agent){
     let text = 'Link on ';
     if(param.student && param.student == 'true'){
       // student insurance
-      text += 'OSHC '+(param.extra_services)? 'with extra insurance':'insurance';
+      text += 'OSHC ';
+      text += (param.extra_services)? 'with extra insurance':'insurance';
     } else {
       // others
       text += param.hospital_cover_type[0]+' health insurance ';
