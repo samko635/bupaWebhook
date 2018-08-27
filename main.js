@@ -21,15 +21,18 @@ app.get('/webhook', (request, response) => {
 app.post('/webhook', (request, response) => {
   const agent = new WebhookClient({ request, response });
   //console.log('Dialogflow Request headers: ' + JSON.stringify(request.headers));
-  //console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
- 
+  console.log('Dialogflow Request body: ' + JSON.stringify(request.body));
+  // Not in use at the moment
   function welcome(agent) {
-    agent.add(`Welcome to my agent!`);
+    if(agent.requestSource != 'GOOGLE_TELEPHONY'){
+      agent.add('Hello! My name is Ella, Bupa\'s support agent. \nPlease begin by asking your question or simply by typing "insurance".');
+      agent.add(new Suggestion('insurance'));
+    }
   }
- 
-  function fallback(agent) {
-    agent.add(`I didn't understand`);
-    agent.add(`I'm sorry, can you try again?`);
+// Not in use at the moment 
+function fallback(agent) {
+  agent.add(`I didn't understand`);
+  agent.add(`I'm sorry, can you try again?`);
 }
 
 function purchasing(agent) {
@@ -41,17 +44,19 @@ function purchasing(agent) {
         //agent.setContext({ name: 'insurance_purchasing', lifespan: 2, parameters: { custormer_status: 'TEST' }});
     } else {
         console.log('OTHERS');
-        agent.add("This is the information about purchasing "+body.queryResult.parameters.insurance_type);
+        agent.add("This is the information about joining Bupa\'s "+body.queryResult.parameters.insurance_type);
         
     }
 }
-
-function claim(agent) {
-    agent.add('This is from webhook.');
-}
-
 function guidedInquiry(agent) {
-    agent.add('This is from webhook.');
+	if(agent.requestSource != 'GOOGLE_TELEPHONY'){
+		agent.add('Please state your purpose of inquiry from the following.');
+		agent.add(new Suggestion('Existing policy'));
+		agent.add(new Suggestion('Claim insurance'));
+		agent.add(new Suggestion('Joining BUPA'));
+	} else {
+		agent.add('Please state your purpose of inquiry from the following. Existing policy. Claim insurance. Joining BUPA.');
+	}
 }
 
 // This is to offer different types of hospital cover based on residency
@@ -60,7 +65,7 @@ function hospitalCover(agent){
     if(param.resident && param.resident == 'true'){
         agent.add('What hospital coverage do you want? Cover options are. \nBasic cover. \nBudget cover. \nStandard cover. \nTop cover.');
     } else {
-        agent.add('What hospital coverage do you want? Cover options are. \n Essential cover. Gold cover.');
+        agent.add('What hospital coverage do you want? Cover options are. \nEssential cover. \nGold cover.');
     }
 }
 
@@ -68,7 +73,7 @@ function sendSMS(agent){
     let param = agent.getContext('insurance_purchasing').parameters;
     console.log('INFO :: '+ JSON.stringify(param));
     // create links here!
-    let text = 'Link on ';
+    let text = 'Ok. I have just sent you a link on ';
     if(param.student && param.student == 'true'){
       // student insurance
       text += 'OSHC ';
@@ -80,15 +85,17 @@ function sendSMS(agent){
         text+='with '+param.extra_level + ' extras';
       }
     }
-    twilioSMS(text, null);  // if any, extract num from user_info context
+    agent.clearOutgoingContext();
+    agent.add(text);
+    //twilioSMS(text, null);  // if any, extract num from user_info context
+    agent.add('If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.');
 }
 
   let intentMap = new Map();
   intentMap.set('Default Welcome Intent', welcome);
   intentMap.set('Default Fallback Intent', fallback);
   intentMap.set('support_inquiry_purchasing', purchasing);
-  intentMap.set('support_inquiry_claim', claim);
-  intentMap.set('insurance_inquiry', guidedInquiry);
+  intentMap.set('support_inquiry_guided', guidedInquiry);
   intentMap.set('hospital_with_extra', sendSMS);
   intentMap.set('hospital_only', sendSMS);
   intentMap.set('OSHC', sendSMS);
