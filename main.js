@@ -69,7 +69,7 @@ function hospitalCover(agent){
     }
 }
 
-function sendSMS_1(agent){
+function sendSMS(agent){
     let param = agent.getContext('insurance_purchasing').parameters;
     console.log('INFO :: '+ JSON.stringify(param));
     // create links here!
