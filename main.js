@@ -6,7 +6,7 @@ const
     body_parser = require('body-parser'),
     app = express().use(body_parser.json()),
     {WebhookClient} = require('dialogflow-fulfillment'),
-    {Card, Suggestion, Payload, Text} = require('dialogflow-fulfillment'),
+    {Card, Suggestion, Payload} = require('dialogflow-fulfillment'),
     twilio = require('twilio'),
     config = require('./config.js');
 
@@ -50,10 +50,11 @@ function purchasing(agent) {
 }
 function guidedInquiry(agent) {
 	if(agent.requestSource != 'GOOGLE_TELEPHONY'){
-		agent.add('Please choose your purpose of inquiry from the following.');
-		agent.add(new Suggestion('Existing policy'));
-		agent.add(new Suggestion('Claim insurance'));
-		agent.add(new Suggestion('Joining BUPA'));
+		agent.add('Please choose your purpose of inquiry from the following. \nExisting policy.\nClaim insurance.\nJoining BUPA.');
+    //Rich response is not supported by WebDemo
+		//agent.add(new Suggestion('Existing policy'));
+		//agent.add(new Suggestion('Claim insurance'));
+		//agent.add(new Suggestion('Joining BUPA'));
 	} else {
 		agent.add('Please state your purpose of inquiry from the following. Existing policy. Claim insurance. Joining BUPA.');
 	}
@@ -85,18 +86,18 @@ function sendSMS(agent){
         text+='with '+param.extra_level + ' extras';
       }
     }
-    //agent.clearOutgoingContexts();
-    agent.clearContext('insurance_purchasing');
-    console.log('Response :: '+text);
+
     //twilioSMS(text, null);  // if any, extract num from user_info context
+    
     if(agent.requestSource == 'GOOGLE_TELEPHONY'){
       console.log('GOOGLE_TELEPHONY');
+      text += '. If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.';
       agent.add(text);
-      agent.add('If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.');
     } else {
       console.log('reqeust Source :: '+agent.requestSource);
       agent.add(text);
     }
+
     
 }
 
