@@ -87,12 +87,15 @@ function sendSMS(agent){
     }
     //agent.clearOutgoingContexts();
     agent.clearContext('insurance_purchasing');
-    agent.add(text);
     console.log('Response :: '+text);
-    console.log('reqeust Source :: '+agent.requestSource);
     //twilioSMS(text, null);  // if any, extract num from user_info context
     if(agent.requestSource == 'GOOGLE_TELEPHONY'){
+      console.log('GOOGLE_TELEPHONY');
+      agent.add(text);
       agent.add('If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.');
+    } else {
+      console.log('reqeust Source :: '+agent.requestSource);
+      agent.add(text);
     }
     
 }
