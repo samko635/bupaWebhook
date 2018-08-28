@@ -50,7 +50,7 @@ function purchasing(agent) {
 }
 function guidedInquiry(agent) {
 	if(agent.requestSource != 'GOOGLE_TELEPHONY'){
-		agent.add('Please state your purpose of inquiry from the following.');
+		agent.add('Please choose your purpose of inquiry from the following.');
 		agent.add(new Suggestion('Existing policy'));
 		agent.add(new Suggestion('Claim insurance'));
 		agent.add(new Suggestion('Joining BUPA'));
@@ -85,10 +85,16 @@ function sendSMS(agent){
         text+='with '+param.extra_level + ' extras';
       }
     }
-    agent.clearOutgoingContext();
+    //agent.clearOutgoingContexts();
+    agent.clearContext('insurance_purchasing');
     agent.add(text);
+    console.log('Response :: '+text);
+    console.log('reqeust Source :: '+agent.requestSource);
     //twilioSMS(text, null);  // if any, extract num from user_info context
-    agent.add('If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.');
+    if(agent.requestSource == 'GOOGLE_TELEPHONY'){
+      agent.add('If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.');
+    }
+    
 }
 
   let intentMap = new Map();
@@ -100,7 +106,6 @@ function sendSMS(agent){
   intentMap.set('hospital_only', sendSMS);
   intentMap.set('OSHC', sendSMS);
   intentMap.set('OSHC Extra', sendSMS);
-  intentMap.set('OSHC - Maybe', sendSMS);
   intentMap.set('support_inquiry_purchasing_extras_only', sendSMS);
   intentMap.set('support_inquiry_purchasing_health_followup1', hospitalCover);
   agent.handleRequest(intentMap);
