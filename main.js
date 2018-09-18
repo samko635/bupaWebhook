@@ -1,3 +1,5 @@
+
+/*jslint node: true */
 'use strict';
 
 // Imports dependencies and set up http server
@@ -91,10 +93,10 @@ function sendSMS(agent){
     
     if(agent.requestSource == 'GOOGLE_TELEPHONY'){
       console.log('GOOGLE_TELEPHONY');
-      text += '. If you are happy with this option and would like to proceed to join, I will transfer you to our consultant.';
+      text += '. If you are happy with this option and would like to proceed to join, I can transfer you to our consultant. Would you like that?';
       agent.add(text);
     } else {
-      console.log('reqeust Source :: '+agent.requestSource);
+      console.log('request Source :: '+agent.requestSource);
       agent.add(text);
     }
 
